@@ -52,7 +52,7 @@ let showHowToPlay = false;
 let modalScrollY = 0;
 let isDraggingModal = false;
 let modalStartY = 0;
-let modalContentHeight = 800; // Approximate height of all content
+let modalContentHeight = 800;
 let howToPlayButton;
 
 function preload() {
@@ -93,6 +93,10 @@ function setup() {
   fileInput.style("border", "2px solid #666");
   fileInput.style("border-radius", "5px");
   fileInput.style("padding", "5px");
+  fileInput.input(() => {
+    // Blur the input after file selection
+    fileInput.elt.blur();
+  });
 
   // Create target beat input
   targetBeatInput = createInput("0,2", "text");
@@ -108,7 +112,7 @@ function setup() {
   // Initialize FFT
   fft = new p5.FFT();
 
-  // Load default atana track
+  // Load default track
   try {
     sound = loadSound(
       "assets/ATANA - I Can t Stay Forever.mp3",
@@ -387,11 +391,6 @@ function drawScore(timeLeft) {
   fill(255);
   textSize(16);
   text(`SCORE: ${score}`, width / 2, 50);
-
-  // High score display
-  // fill(255, 215, 0); // Gold color for high score
-  // textSize(16);
-  // text(`HIGH SCORE: ${highScore}`, 90, 100);
 }
 
 function drawLetters() {
