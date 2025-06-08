@@ -18,7 +18,7 @@ let dragging = false;
 let fft;
 let bassLevel, midLevel, highLevel;
 let lastBeatTime = 0;
-let baseBeatInterval = 60000 / 120; // Fixed 120 BPM
+let baseBeatInterval = 60000 / 110; // Fixed 110 BPM
 let beatInterval = baseBeatInterval;
 let letterInterval = 4;
 let currentBeatCount = 0;
@@ -31,7 +31,7 @@ let lastBeatHit = false; // Track if the last beat was hit
 let pixelFont;
 let sound;
 let fileInput;
-let detectedBPM = 120; // Fixed BPM
+let detectedBPM = 110; // Fixed BPM
 let energyHistory = [];
 let lastPeakTime = 0;
 let peakThreshold = 0.15;
@@ -42,7 +42,7 @@ let bpmHistory = [];
 let bpmHistorySize = 5;
 let defaultOscillator;
 let defaultGain;
-let defaultBPM = 120;
+let defaultBPM = 110;
 let isLoading = true;
 let targetBeatsPerCycle = 2; // Number of target beats per 4-beat cycle
 let targetBeatPositions = [0, 2]; // Array to store which beats are targets
@@ -62,7 +62,7 @@ function setup() {
   amplitude = new p5.Amplitude();
 
   // Create file input
-  fileInput = createFileInput(handleFile);
+  fileInput = select("#fileInput2");
   fileInput.position(width - 320, 30);
   fileInput.style("color", "white");
   fileInput.style("background-color", "#333");
@@ -128,132 +128,79 @@ function createDefaultAudio() {
   fft.setInput(defaultGain);
 }
 
-function startDefaultBeat() {
-  if (!defaultOscillator) {
-    createDefaultAudio();
+var srVal = document.getElementById("sampleRateInput")?.value || 44100;
+var context = new AudioContext({ sampleRate: srVal }),
+  trackGainNode = context.createGain();
+fileInput2 = document.getElementById("fileInput2");
+fileInput2.onchange = function () {
+  var files = document.getElementById("fileInput2").files;
+  if (files.length == 0) return;
+
+  var reader = new FileReader();
+
+  reader.onload = function (fileEvent) {
+    context.decodeAudioData(fileEvent.target.result, processAudioData);
+  };
+  reader.readAsArrayBuffer(files[0]);
+
+  if (sound) {
+    sound.stop();
   }
+  console.log(files[0]);
 
-  defaultOscillator.start();
-  defaultGain.amp(0.3);
+  sound = loadSound(files[0], () => {
+    console.log("New audio file loaded");
+    fft.setInput(sound);
 
-  // Create a simple beat pattern
-  let beatPattern = [1, 0, 1, 0]; // Strong, weak, strong, weak
-  let currentBeat = 0;
-  let lastBeatTime = millis();
-
-  function playBeat() {
-    if (!isPlaying || isPaused) {
-      defaultGain.amp(0);
-      return;
+    if (gameStarted) {
+      startGame();
     }
+  });
+};
 
-    let currentTime = millis();
-    let timeSinceLastBeat = currentTime - lastBeatTime;
-
-    if (timeSinceLastBeat >= beatInterval) {
-      let amplitude = beatPattern[currentBeat] * 0.3;
-      defaultGain.amp(amplitude, 0.05);
-
-      currentBeat = (currentBeat + 1) % beatPattern.length;
-      lastBeatTime = currentTime;
+var processAudioData = function (buffer) {
+  audioBuffer = buffer;
+  var audioData = [];
+  if (buffer.numberOfChannels > 1) {
+    var channel1Data = buffer.getChannelData(0);
+    var channel2Data = buffer.getChannelData(1);
+    var length = channel1Data.length;
+    for (var i = 0; i < length; i++) {
+      audioData[i] = (channel1Data[i] + channel2Data[i]) / 2;
     }
-
-    // Schedule next frame
-    requestAnimationFrame(playBeat);
-  }
-
-  playBeat();
-}
-
-function handleFile(file) {
-  if (file.type === "audio") {
-    if (sound) {
-      sound.stop();
-    }
-
-    sound = loadSound(file.data, () => {
-      console.log("New audio file loaded");
-      fft.setInput(sound);
-
-      if (gameStarted) {
-        startGame();
-      }
-    });
   } else {
-    console.log("Please select an audio file");
+    audioData = buffer.getChannelData(0);
   }
+
+  asyncCalcChain(audioData);
+};
+
+var calcTempo = function (buffer) {
+  var audioData = [];
+  // Take the average of the two channels
+  if (buffer.numberOfChannels == 2) {
+    var channel1Data = buffer.getChannelData(0);
+    var channel2Data = buffer.getChannelData(1);
+    var length = channel1Data.length;
+    for (var i = 0; i < length; i++) {
+      audioData[i] = (channel1Data[i] + channel2Data[i]) / 2;
+    }
+  } else {
+    audioData = buffer.getChannelData(0);
+  }
+  asyncCalcChain(audioData);
+};
+function asyncCalcChain(audioData) {
+  asyncCalcTempo(audioData);
 }
 
-function detectBPM() {
-  // Reset detection variables
-  energyHistory = [];
-  lastPeakTime = 0;
-  detectedBPM = 0;
-  bpmHistory = [];
-
-  // Start analyzing the audio
-  sound.play();
-  sound.pause();
-
-  // Analyze first 10 seconds of the song for better accuracy
-  let analysisStartTime = millis();
-  let analysisDuration = 10000; // 10 seconds
-
-  function analyzeAudio() {
-    if (millis() - analysisStartTime < analysisDuration) {
-      let spectrum = fft.analyze();
-      let energy = fft.getEnergy("bass");
-      energyHistory.push(energy);
-
-      // Look for peaks in the bass energy
-      if (energyHistory.length > 1) {
-        let prevEnergy = energyHistory[energyHistory.length - 2];
-        let currentEnergy = energyHistory[energyHistory.length - 1];
-
-        // If we detect a peak and enough time has passed
-        if (
-          currentEnergy > peakThreshold &&
-          currentEnergy > prevEnergy &&
-          millis() - lastPeakTime > minPeakDistance
-        ) {
-          lastPeakTime = millis();
-        }
-      }
-
-      requestAnimationFrame(analyzeAudio);
-    } else {
-      // Calculate BPM from the peaks
-      let peakCount = energyHistory.filter((energy, i) => {
-        if (i === 0) return false;
-        return energy > peakThreshold && energy > energyHistory[i - 1];
-      }).length;
-
-      // Calculate raw BPM
-      let rawBPM = (peakCount / (analysisDuration / 1000)) * 60;
-
-      // Add to history and maintain size
-      bpmHistory.push(rawBPM);
-      if (bpmHistory.length > bpmHistorySize) {
-        bpmHistory.shift();
-      }
-
-      // Calculate average BPM
-      let avgBPM = bpmHistory.reduce((a, b) => a + b, 0) / bpmHistory.length;
-
-      // Constrain BPM to reasonable range
-      detectedBPM = constrain(avgBPM, minBPM, maxBPM);
-      console.log("Detected BPM:", detectedBPM);
-
-      // Set base beat interval based on BPM
-      baseBeatInterval = 60000 / detectedBPM; // Convert BPM to milliseconds
-      beatInterval = baseBeatInterval / tempo;
-
-      // Reset the audio
-      sound.stop();
-    }
-  }
-
-  analyzeAudio();
+function asyncCalcTempo(audioData) {
+  setTimeout(function () {
+    var mt = new MusicTempo(audioData);
+    defaultBPM = mt.tempo;
+    detectedBPM = mt.tempo;
+    baseBeatInterval = 60000 / mt.tempo;
+  }, 100);
 }
 
 function draw() {
@@ -736,8 +683,6 @@ function togglePause() {
   } else {
     if (sound && sound.isLoaded()) {
       sound.play();
-    } else {
-      startDefaultBeat();
     }
     lastBeatTime = millis();
   }
