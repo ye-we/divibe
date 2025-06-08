@@ -51,7 +51,6 @@ A rhythm-based typing game where you sync your keystrokes with the music. Feel t
 Built with:
 
 - p5.js for graphics and audio
-- Web Audio API for sound processing
 - music-tempo for BPM detection
 
 ## 🚀 Getting Started
@@ -67,13 +66,6 @@ Built with:
 - Use the tempo control to find your comfort zone
 - Watch the beat indicators to stay in rhythm
 - Try different target beat patterns for variety
-
-## 🎵 Music Recommendations
-
-- House music works great for practice
-- Look for tracks with clear kick drums
-- 120-130 BPM is ideal for beginners
-- Any genre can work - find what you enjoy!
 
 ## 📝 License
 
