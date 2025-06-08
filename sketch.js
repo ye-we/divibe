@@ -67,23 +67,8 @@ function setup() {
   frameRate(60);
   amplitude = new p5.Amplitude();
 
-  // Set up modal controls
-  const modal = document.getElementById("howToPlayModal");
-  const btn = document.getElementById("howToPlayBtn");
-
-  // Button click handler
-  btn.addEventListener("click", () => {
-    showHowToPlay = !showHowToPlay;
-    modal.style.display = showHowToPlay ? "block" : "none";
-  });
-
-  // Click outside to close
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      showHowToPlay = false;
-      modal.style.display = "none";
-    }
-  });
+  // Initialize FFT
+  fft = new p5.FFT();
 
   // Create file input
   fileInput = select("#fileInput2");
@@ -108,9 +93,6 @@ function setup() {
   targetBeatInput.style("border-radius", "5px");
   targetBeatInput.style("padding", "5px");
   targetBeatInput.input(updateTargetBeatPositionsFromInput);
-
-  // Initialize FFT
-  fft = new p5.FFT();
 
   // Load default track
   try {
@@ -223,6 +205,11 @@ function draw() {
   midLevel = fft.getEnergy("mid");
   highLevel = fft.getEnergy("treble");
 
+  // Draw central visualization only when not actively playing
+  if (!gameStarted || gameEnded || isPaused) {
+    drawCentralVisualization();
+  }
+
   // Draw frequency bands
   drawFrequencyBands();
   drawTempoSlider();
@@ -334,6 +321,8 @@ function drawPauseScreen() {
   fill(255);
   textSize(32);
   text("PAUSED", width / 2, height / 2 - 50);
+  textSize(24);
+  text(`SCORE: ${score}`, width / 2, height / 2);
   textSize(16);
   text("Press SPACE to resume", width / 2, height / 2 + 50);
 }
@@ -527,6 +516,56 @@ function drawFrequencyWave(x, y, level, color) {
       ellipse(x, y, 3, 3);
     }
   }
+
+  pop();
+}
+
+function drawCentralVisualization() {
+  push();
+  translate(width / 2, height / 2);
+
+  // Simulate energy levels with smooth sine waves
+  let time = millis() * 0.001; // Convert to seconds
+  let bass = (sin(time * 0.5) + 1) * 0.5; // Slower wave
+  let mid = (sin(time * 0.7 + 1) + 1) * 0.5; // Medium wave
+  let high = (sin(time * 1.2 + 2) + 1) * 0.5; // Faster wave
+
+  // Base size of the circle
+  let baseSize = min(width, height) * 0.4;
+
+  // Draw multiple layers of circles with different frequencies
+  for (let i = 0; i < 3; i++) {
+    let size = baseSize * (1 + i * 0.2);
+    let alpha = 100 - i * 30;
+
+    // Create pulsing effect based on different frequency bands
+    let pulse = 1;
+    if (i === 0) pulse = 1 + bass * 0.2;
+    else if (i === 1) pulse = 1 + mid * 0.15;
+    else pulse = 1 + high * 0.1;
+
+    // Draw the circle
+    noFill();
+    stroke(100, 100, 255, alpha);
+    strokeWeight(3);
+    ellipse(0, 0, size * pulse, size * pulse);
+
+    // Add some particles for high energy
+    if (bass > 0.7) {
+      for (let j = 0; j < 8; j++) {
+        let angle = (j / 8) * TWO_PI;
+        let x = cos(angle) * ((size * pulse) / 2);
+        let y = sin(angle) * ((size * pulse) / 2);
+        fill(100, 100, 255, 150);
+        noStroke();
+        ellipse(x, y, 4, 4);
+      }
+    }
+  }
+
+  // Add a subtle glow effect
+  drawingContext.shadowBlur = 20;
+  drawingContext.shadowColor = "rgba(100, 100, 255, 0.3)";
 
   pop();
 }
