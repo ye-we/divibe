@@ -104,30 +104,6 @@ function setup() {
   }
 }
 
-function createDefaultAudio() {
-  // Create oscillator for the beat
-  defaultOscillator = new p5.Oscillator("sine");
-  defaultGain = new p5.Gain();
-
-  // Set up the audio chain
-  defaultOscillator.disconnect();
-  defaultGain.disconnect();
-  defaultOscillator.connect(defaultGain);
-  defaultGain.connect();
-
-  // Set initial values
-  defaultOscillator.freq(220); // A3 note
-  defaultGain.amp(0);
-
-  // Set the default BPM
-  detectedBPM = defaultBPM;
-  baseBeatInterval = 60000 / defaultBPM;
-  beatInterval = baseBeatInterval / tempo;
-
-  // Connect to FFT
-  fft.setInput(defaultGain);
-}
-
 var srVal = document.getElementById("sampleRateInput")?.value || 44100;
 var context = new AudioContext({ sampleRate: srVal }),
   trackGainNode = context.createGain();
