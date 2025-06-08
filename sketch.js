@@ -18,7 +18,7 @@ let dragging = false;
 let fft;
 let bassLevel, midLevel, highLevel;
 let lastBeatTime = 0;
-let baseBeatInterval = 60000 / 128; // Fixed 128 BPM
+let baseBeatInterval = 60000 / 120; // Fixed 120 BPM
 let beatInterval = baseBeatInterval;
 let letterInterval = 4;
 let currentBeatCount = 0;
@@ -31,7 +31,7 @@ let lastBeatHit = false; // Track if the last beat was hit
 let pixelFont;
 let sound;
 let fileInput;
-let detectedBPM = 128; // Fixed BPM
+let detectedBPM = 120; // Fixed BPM
 let energyHistory = [];
 let lastPeakTime = 0;
 let peakThreshold = 0.15;
