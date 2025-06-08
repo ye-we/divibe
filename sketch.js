@@ -48,6 +48,12 @@ let targetBeatsPerCycle = 2; // Number of target beats per 4-beat cycle
 let targetBeatPositions = [0, 2]; // Array to store which beats are targets
 let targetBeatInput;
 let lastInputValue = "";
+let showHowToPlay = false;
+let modalScrollY = 0;
+let isDraggingModal = false;
+let modalStartY = 0;
+let modalContentHeight = 800; // Approximate height of all content
+let howToPlayButton;
 
 function preload() {
   // Load high score from localStorage
@@ -60,6 +66,24 @@ function setup() {
   textFont("monospace");
   frameRate(60);
   amplitude = new p5.Amplitude();
+
+  // Set up modal controls
+  const modal = document.getElementById("howToPlayModal");
+  const btn = document.getElementById("howToPlayBtn");
+
+  // Button click handler
+  btn.addEventListener("click", () => {
+    showHowToPlay = !showHowToPlay;
+    modal.style.display = showHowToPlay ? "block" : "none";
+  });
+
+  // Click outside to close
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      showHowToPlay = false;
+      modal.style.display = "none";
+    }
+  });
 
   // Create file input
   fileInput = select("#fileInput2");
@@ -201,51 +225,45 @@ function draw() {
 
   if (!gameStarted) {
     drawTitleScreen();
-    return;
-  }
-
-  if (gameEnded) {
+  } else if (gameEnded) {
     drawGameOver();
-    return;
-  }
-
-  if (isPaused) {
+  } else if (isPaused) {
     drawPauseScreen();
-    return;
-  }
+  } else {
+    // Game is running
+    let timeLeft = max(0, countdown - int((millis() - startTime) / 1000));
+    if (timeLeft <= 0) {
+      endGame();
+      return;
+    }
 
-  let timeLeft = max(0, countdown - int((millis() - startTime) / 1000));
-  if (timeLeft <= 0) {
-    endGame();
-    return;
-  }
+    // Beat detection
+    if (isPlaying && gameStarted && !isPaused) {
+      let currentTime = millis();
 
-  // Beat detection
-  if (isPlaying && gameStarted && !isPaused) {
-    let currentTime = millis();
+      // Check if it's time for a new beat
+      if (currentTime - lastBeatTime >= beatInterval) {
+        currentBeatCount = (currentBeatCount + 1) % letterInterval;
+        lastBeatTime = currentTime;
 
-    // Check if it's time for a new beat
-    if (currentTime - lastBeatTime >= beatInterval) {
-      currentBeatCount = (currentBeatCount + 1) % letterInterval;
-      lastBeatTime = currentTime;
+        // If we have a target beat set and have some score
+        if (hasSetTargetBeat && score > 0) {
+          beatsSinceLastScore++;
 
-      // If we have a target beat set and have some score
-      if (hasSetTargetBeat && score > 0) {
-        beatsSinceLastScore++;
-
-        // If we've gone 5 beats without scoring
-        if (beatsSinceLastScore >= 5) {
-          score = max(0, score - 10); // Deduct 10 points
-          console.log("Deducted 10 points - no score in 5 beats");
-          beatsSinceLastScore = 0; // Reset the counter
+          // If we've gone 5 beats without scoring
+          if (beatsSinceLastScore >= 5) {
+            score = max(0, score - 10); // Deduct 10 points
+            console.log("Deducted 10 points - no score in 5 beats");
+            beatsSinceLastScore = 0; // Reset the counter
+          }
         }
       }
     }
-  }
 
-  drawScore(timeLeft);
-  drawLetters();
-  drawBeatDisplay();
+    drawScore(timeLeft);
+    drawLetters();
+    drawBeatDisplay();
+  }
 }
 
 function drawLoadingScreen() {
@@ -274,7 +292,7 @@ function drawTitleScreen() {
   text("DIVIBE", width / 2, height / 2 - 50);
 
   // Display high score
-  fill(255, 215, 0); // Gold color for high score
+  fill(0, 255, 0); // Green color for high score
   textSize(24);
   text(`HIGH SCORE: ${highScore}`, width / 2, height / 2);
 
@@ -363,23 +381,17 @@ function drawTempoSlider() {
 function drawScore(timeLeft) {
   // Time display
   fill(255);
-  textSize(16);
-  text(`TIME: ${timeLeft}s`, width / 2, 50);
-
-  // Score display with glow (moved to top left)
-  for (let i = 0; i < 3; i++) {
-    fill(100, 100, 255, 50 - i * 15);
-    textSize(24 + i * 2);
-    text(`SCORE: ${score}`, 100, 30);
-  }
-  fill(255);
   textSize(24);
-  text(`SCORE: ${score}`, 100, 30);
+  text(`TIME: ${timeLeft}s`, width / 2, 80);
+
+  fill(255);
+  textSize(16);
+  text(`SCORE: ${score}`, width / 2, 50);
 
   // High score display
-  fill(255, 215, 0); // Gold color for high score
-  textSize(16);
-  text(`HIGH SCORE: ${highScore}`, 100, 60);
+  // fill(255, 215, 0); // Gold color for high score
+  // textSize(16);
+  // text(`HIGH SCORE: ${highScore}`, 90, 100);
 }
 
 function drawLetters() {
@@ -568,6 +580,21 @@ function keyPressed() {
 }
 
 function mousePressed() {
+  if (showHowToPlay) {
+    // Check if click is inside modal content area
+    if (
+      mouseX >= width / 2 - 280 &&
+      mouseX <= width / 2 + 280 &&
+      mouseY >= height / 2 - 150 &&
+      mouseY <= height / 2 + 250
+    ) {
+      isDraggingModal = true;
+      modalStartY = mouseY;
+    } else {
+      // Click outside modal - close it
+      showHowToPlay = false;
+    }
+  }
   // Check if mouse is inside the slider area
   const sliderX = width - 320;
   const sliderY = 120; // Updated to match new position
@@ -616,11 +643,31 @@ function mousePressed() {
 
 function mouseReleased() {
   dragging = false;
+  isDraggingModal = false;
 }
 
 function mouseDragged() {
   if (dragging) {
     updateTempoFromMouse();
+  }
+  if (isDraggingModal) {
+    let deltaY = mouseY - modalStartY;
+    modalScrollY = constrain(
+      modalScrollY - deltaY,
+      0,
+      modalContentHeight - 400
+    );
+    modalStartY = mouseY;
+  }
+}
+
+function mouseWheel(event) {
+  if (showHowToPlay) {
+    modalScrollY = constrain(
+      modalScrollY + event.delta,
+      0,
+      modalContentHeight - 400
+    );
   }
 }
 

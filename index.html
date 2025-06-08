@@ -15,13 +15,238 @@
       canvas {
         display: block;
       }
+      #howToPlayBtn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background-color: #1a1a1a;
+        color: #00ff00;
+        border: 2px solid #00ff00;
+        border-radius: 5px;
+        padding: 8px 16px;
+        font-family: monospace;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      #howToPlayBtn:hover {
+        background-color: #00ff00;
+        color: #1a1a1a;
+      }
+      #howToPlayModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1001;
+      }
+      .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        max-height: 500px;
+        background: #1a1a1a;
+        border: 2px solid #00ff00;
+        border-radius: 10px;
+        padding: 20px;
+        color: #fff;
+        font-family: monospace;
+        overflow-y: auto;
+      }
+      .modal-title {
+        color: #00ff00;
+        font-size: 32px;
+        text-align: center;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #00ff00;
+      }
+      .modal-section {
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(0, 255, 0, 0.05);
+        border-radius: 5px;
+      }
+      .section-title {
+        color: #00ff00;
+        font-size: 20px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .section-content {
+        color: #fff;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .section-content ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .section-content li {
+        margin-bottom: 12px;
+        position: relative;
+        padding-left: 20px;
+      }
+      .section-content li::before {
+        content: ">";
+        color: #00ff00;
+        position: absolute;
+        left: 0;
+      }
+      .modal-close {
+        text-align: center;
+        color: #00ff00;
+        margin-top: 20px;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+      .modal-footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(0, 255, 0, 0.2);
+      }
+      .modal-footer a {
+        color: #00ff00;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        padding: 5px 10px;
+        border: 1px solid #00ff00;
+        border-radius: 3px;
+      }
+      .modal-footer a:hover {
+        background: #00ff00;
+        color: #1a1a1a;
+      }
+      /* Custom scrollbar */
+      .modal-content::-webkit-scrollbar {
+        width: 10px;
+      }
+      .modal-content::-webkit-scrollbar-track {
+        background: #1a1a1a;
+      }
+      .modal-content::-webkit-scrollbar-thumb {
+        background: #00ff00;
+        border-radius: 5px;
+      }
+      .modal-content::-webkit-scrollbar-thumb:hover {
+        background: #00cc00;
+      }
+      .highlight {
+        color: #00ff00;
+        font-weight: bold;
+      }
+      .emoji {
+        font-size: 1.2em;
+        margin-right: 5px;
+      }
     </style>
     <script src="./p5/p5.min.js"></script>
     <script src="./p5/addons/p5.sound.min.js"></script>
     <script src="./lib/music-tempo.min.js"></script>
   </head>
   <body>
-    <input id="fileInput2" type="file" />
+    <input id="fileInput2" type="file" accept="audio/*" />
+    <button id="howToPlayBtn">How to Play</button>
+    <div id="howToPlayModal">
+      <div class="modal-content">
+        <div class="modal-title">🎮 DIVIBE MASTER GUIDE 🎮</div>
+
+        <div class="modal-section">
+          <div class="section-title">The Beat Goes On</div>
+          <div class="section-content">
+            <ul>
+              <li>
+                Welcome to the rhythm machine! Your mission: become one with the
+                beat
+              </li>
+              <li>
+                Watch for letters appearing on screen - they're your dance
+                partners
+              </li>
+              <li>
+                Press both letters
+                <span class="highlight">at the same time</span> in sync with the
+                music to score 50 points
+              </li>
+              <li>
+                Miss 4 beats in a row? That's a rhythm reset! (-10 points)
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="section-title">Your Control Center</div>
+          <div class="section-content">
+            <ul>
+              <li>
+                <span class="highlight">Left Hand</span>: A, S, D, F, Q, W, E,
+                Z, X, C
+              </li>
+              <li>
+                <span class="highlight">Right Hand</span>: J, K, L, ;, U, I, O,
+                P, N, M
+              </li>
+              <li>
+                <span class="highlight">SPACE</span>: Start/Pause the game
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="section-title">Power Moves</div>
+          <div class="section-content">
+            <ul>
+              <li>
+                <span class="highlight">Tempo Control</span>: Speed up or slow
+              </li>
+              <li>
+                <span class="highlight">Target Beats</span>: Choose your
+                favorite beats to dance on
+              </li>
+              <li>
+                <span class="highlight">Visualizer</span>: Watch the music come
+                alive
+              </li>
+              <li>
+                <span class="highlight">Custom Tracks</span>: Bring your own
+                music to the party!
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="section-title">Tips From The Dev</div>
+          <div class="section-content">
+            <ul>
+              <li>
+                <span class="highlight">Pro Tip</span>: Stomp your feet or bob
+                your head to the beat - trust me, it works!
+              </li>
+              <li>
+                <span class="highlight">Music Choice</span>: Afro House is fire,
+                but honestly, you can vibe to anything.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-close">Click anywhere outside to close</div>
+        <div class="modal-footer">
+          <a href="https://t.me/ye_we" target="_blank">@ye_we</a>
+        </div>
+      </div>
+    </div>
     <script src="sketch.js"></script>
   </body>
 </html>
