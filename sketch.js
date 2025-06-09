@@ -70,6 +70,21 @@ function setup() {
   // Initialize FFT
   fft = new p5.FFT();
 
+  // Setup modal functionality
+  const modal = document.getElementById("howToPlayModal");
+  const btn = document.getElementById("howToPlayBtn");
+
+  btn.onclick = function () {
+    modal.style.display = "block";
+  };
+
+  // Close modal when clicking outside
+  window.onclick = function (event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  };
+
   // Create file input
   fileInput = select("#fileInput2");
   fileInput.position(width - 320, 30);
